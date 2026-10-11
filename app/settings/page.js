@@ -2,6 +2,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { PRAYERS, dayKey } from "@/lib/days";
+import { START_EDIT_LOGS, minStart, startEditable } from "@/lib/stats";
 import { deleteAccount, loadAccountData, resetData, supabase, updateProfile } from "@/lib/supabase";
 import { useAccount } from "@/lib/use-account";
 import TopBar from "../top-bar";
@@ -33,6 +34,7 @@ export default function Settings() {
   const router = useRouter();
   const userId = account.user?.id;
   const [reminders, setReminders] = useState(null); // null until the profile is loaded
+  const [data, setData] = useState(null); // { profile, logs, qaza }
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
@@ -44,7 +46,11 @@ export default function Settings() {
   useEffect(() => {
     if (!userId) return;
     loadAccountData()
-      .then(({ profile }) => profile && setReminders(profile.reminders))
+      .then((loaded) => {
+        if (!loaded.profile) return;
+        setData(loaded);
+        setReminders(loaded.profile.reminders);
+      })
       .catch(() => {});
   }, [userId]);
 
@@ -80,6 +86,17 @@ export default function Settings() {
     }, "Password changed.");
   }
 
+  function onSaveStart(e) {
+    e.preventDefault();
+    const form = new FormData(e.target);
+    const startQaza = {};
+    for (const { id } of PRAYERS) startQaza[id] = Math.max(0, Math.floor(Number(form.get(id)) || 0));
+    run(async () => {
+      await updateProfile(userId, { start_qaza: startQaza });
+      setData((d) => ({ ...d, profile: { ...d.profile, start_qaza: startQaza } }));
+    }, "Starting Qaza saved.");
+  }
+
   const onLogOut = () =>
     run(async () => {
       await supabase().auth.signOut();
@@ -89,7 +106,9 @@ export default function Settings() {
   const onReset = () =>
     run(async () => {
       const zero = Object.fromEntries(PRAYERS.map((p) => [p.id, 0]));
-      await resetData(userId, dayKey(new Date()), zero);
+      const today = dayKey(new Date());
+      await resetData(userId, today, zero);
+      setData((d) => d && { profile: { ...d.profile, start_day: today, start_qaza: zero }, logs: [], qaza: [] });
     }, "All data reset. Every counter is back to 0.");
 
   const onDelete = () =>
@@ -129,6 +148,39 @@ export default function Settings() {
             Email me at 6PM if any of yesterday&apos;s prayers are still not logged
           </label>
         </section>
+      )}
+
+      {data && startEditable(data.logs, data.qaza) && (
+        // Keyed by the saved numbers so the boxes refill after a save or a reset.
+        <form className="panel" key={JSON.stringify(data.profile.start_qaza)} onSubmit={onSaveStart}>
+          <h2>Starting Qaza</h2>
+          <p className="muted">
+            Correct the numbers you entered at sign-up. This closes for good once you have made {START_EDIT_LOGS}{" "}
+            logs (prayers marked or Qaza entries).
+          </p>
+          <div className="qaza-grid">
+            {PRAYERS.map((prayer) => (
+              <div className="field" key={prayer.id}>
+                <label htmlFor={`start-${prayer.id}`}>{prayer.name}</label>
+                <input
+                  id={`start-${prayer.id}`}
+                  name={prayer.id}
+                  type="number"
+                  inputMode="numeric"
+                  min={minStart(data.logs, data.qaza)[prayer.id]}
+                  step="1"
+                  defaultValue={Number(data.profile.start_qaza?.[prayer.id]) || 0}
+                  required
+                />
+              </div>
+            ))}
+          </div>
+          <div>
+            <button className="button quiet" type="submit" disabled={busy}>
+              Save starting Qaza
+            </button>
+          </div>
+        </form>
       )}
 
       <form className="panel" onSubmit={onChangePassword}>

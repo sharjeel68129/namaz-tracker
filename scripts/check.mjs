@@ -1,7 +1,7 @@
 // Edge-case checks for the date and statistics rules: npm run check
 import assert from "node:assert/strict";
 import { PRAYERS, addDays, daysBetween, expiredUnlogged, indexLogs, visibleCards } from "../lib/days.js";
-import { chartCells, maskEmail, owedCounts, rangeStats } from "../lib/stats.js";
+import { chartCells, maskEmail, minStart, owedCounts, rangeStats, startEditable } from "../lib/stats.js";
 
 const at = (y, m, d, h = 0, min = 0) => new Date(y, m - 1, d, h, min);
 const log = (day, prayer, status, loggedAt, auto = false) => ({ day, prayer, status, auto, logged_at: loggedAt.toISOString() });
@@ -79,5 +79,18 @@ assert.equal(rangeStats("2026-11-01", "2026-11-30", logs, qaza).onTime, null);
 // Email mask.
 assert.equal(maskEmail("noginosh698@gmail.com"), "********698@gmail.com");
 assert.equal(maskEmail("ab@x.org"), "*b@x.org");
+
+// Starting Qaza stays editable until two logs made by hand; auto-missed prayers do not count.
+const hand = log(START, "fajr", "prayed", at(2026, 10, 1, 6));
+const auto = log(START, "zuhr", "missed", at(2026, 10, 3), true);
+const entry = { prayer: "asr", date_prayed: START, count: 4 };
+assert.equal(startEditable([], []), true);
+assert.equal(startEditable([hand, auto, auto], []), true);
+assert.equal(startEditable([hand], [entry]), false);
+assert.equal(startEditable([hand, hand], []), false);
+// Four Asr Qaza already logged, so the Asr start cannot drop below 4; a miss lowers the floor.
+assert.equal(minStart([auto], [entry]).asr, 4);
+assert.equal(minStart([log(START, "asr", "missed", at(2026, 10, 1))], [entry]).asr, 3);
+assert.equal(minStart([auto], [entry]).zuhr, 0);
 
 console.log("All checks passed.");

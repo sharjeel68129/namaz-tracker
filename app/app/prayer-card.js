@@ -1,7 +1,7 @@
 /** One prayer rectangle: name on the left, Qaza counter, then Prayed / Missed (or Logged) on the right. */
 export default function PrayerCard({ prayer, past, log, owed, busy, onLog, onUndo }) {
   return (
-    <li className="prayer" style={{ "--tint": `var(--${prayer.id})` }}>
+    <li className="prayer">
       <div className="prayer-name">
         {prayer.name}
         {past && <small>Yesterday</small>}

@@ -1,24 +1,18 @@
-/* Night-sky dark scheme. Each prayer carries the colour of the sky at its time of day;
-   gold is the one accent for the main action on a screen. No gradients. */
+/* Warm charcoal with cream text. Muted gold is the one accent, for the main action on a
+   screen; the only other colour is the chart and the Prayed / Missed buttons. No gradients. */
 :root {
-  --bg: #0c1626;
-  --surface: #131f33;
-  --raised: #1a2942;
-  --line: #2a3b58;
-  --text: #eef2f8;
-  --muted: #a9b6cb;
-  --gold: #f2b84b;
-  --on-gold: #1a1203;
-
-  --fajr: #7fb2f0;
-  --zuhr: #f6cf57;
-  --asr: #f2994a;
-  --maghrib: #ee6c8a;
-  --isha: #9db4d6;
+  --bg: #171614;
+  --surface: #1f1e1b;
+  --raised: #2a2825;
+  --line: #3b3833;
+  --text: #f1eadb;
+  --muted: #b5ad9d;
+  --gold: #d9b36a;
+  --on-gold: #1c1505;
 
   --prayed: #178a4c;
   --missed: #d2413c;
-  --logged: #56627a;
+  --logged: #5f5a52;
   --danger-text: #ff8f88;
   --ok-text: #6fd69b;
 
@@ -28,7 +22,7 @@
   --c2: #f2ce3b;
   --c1: #f08a2b;
   --c0: #ea3a33;
-  --cnone: #223049;
+  --cnone: #2e2c28;
 
   --radius: 14px;
   --radius-small: 9px;
@@ -436,15 +430,19 @@ button:disabled {
   font-size: 0.9375rem;
 }
 
-/* 20% | 60% | 20% of the screen: the prayer rectangles fill the centre column. */
+/* Sidebar, prayers, sidebar: the leftover width is shared equally between the four gaps
+   (screen edge to sidebar, sidebar to prayers, and the same again on the right). */
 .columns {
-  display: grid;
-  grid-template-columns: 20% 60% 20%;
+  display: flex;
+  justify-content: space-evenly;
   align-items: start;
+  gap: 1.5rem;
+  padding: 0 1.5rem;
 }
 
 .side {
-  padding: 1.5rem 1.25rem;
+  flex: 0 0 15rem;
+  padding: 1.5rem 0;
   display: grid;
   gap: 2rem;
 }
@@ -458,7 +456,9 @@ button:disabled {
   display: none;
 }
 
+/* Narrower than its 60% column, so the prayer name and its buttons sit close together. */
 .centre {
+  flex: 0 1 50rem;
   padding: 1.5rem 0 4rem;
   min-width: 0;
 }
@@ -472,30 +472,33 @@ button:disabled {
   margin-top: 0;
 }
 
+/* One rectangle holding all the prayers: each is a row, divided from the next by a line. */
 .prayers {
   list-style: none;
   margin: 0;
   padding: 0;
-  display: grid;
-  gap: 0.75rem;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
 }
 
 .prayer {
   display: flex;
   align-items: center;
   gap: 1rem;
-  padding: 1rem 1.25rem 1rem 1.5rem;
-  background: var(--surface);
-  border: 1px solid var(--line);
-  border-left: 6px solid var(--tint);
-  border-radius: var(--radius);
+  padding: 0.5rem 1rem;
+  border-bottom: 1px solid var(--line);
+}
+
+.prayer:last-child {
+  border-bottom: 0;
 }
 
 .prayer-name {
   flex: 1;
   min-width: 0;
   font-family: var(--font-display), system-ui, sans-serif;
-  font-size: 1.5rem;
+  font-size: 1.25rem;
   font-weight: 700;
   line-height: 1.15;
 }
@@ -558,6 +561,7 @@ button:disabled {
 }
 
 .undo {
+  text-decoration: none;
   font-size: 0.875rem;
   min-height: 44px;
 }
@@ -712,23 +716,12 @@ button:disabled {
   border-bottom: 1px solid var(--line);
 }
 
-.balance li::before {
-  content: "";
-  align-self: center;
-  width: 0.6rem;
-  height: 0.6rem;
-  margin-right: 0.6rem;
-  border-radius: 50%;
-  background: var(--tint, transparent);
-}
-
 .balance span:first-of-type {
   flex: 1;
 }
 
-.balance .total {
+.balance li:last-child {
   border-bottom: 0;
-  font-weight: 700;
 }
 
 .month-nav {
@@ -810,9 +803,12 @@ button:disabled {
 
   .columns {
     display: block;
+    padding: 0;
   }
 
   .centre {
+    max-width: 50rem;
+    margin: 0 auto;
     padding: 1.25rem 1rem 4rem;
   }
 
@@ -823,6 +819,7 @@ button:disabled {
     bottom: 0;
     z-index: 30;
     width: 80%;
+    padding: 1.5rem 1.25rem;
     align-content: start;
     overflow-y: auto;
     background: var(--bg);
@@ -859,7 +856,7 @@ button:disabled {
     inset: 0;
     z-index: 20;
     border: 0;
-    background: rgba(5, 10, 20, 0.55);
+    background: rgba(10, 9, 8, 0.6);
     backdrop-filter: blur(6px);
     -webkit-backdrop-filter: blur(6px);
   }

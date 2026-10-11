@@ -170,15 +170,11 @@ export default function Tracker() {
             <h2>Qaza balance</h2>
             <ul className="balance">
               {PRAYERS.map((prayer) => (
-                <li key={prayer.id} style={{ "--tint": `var(--${prayer.id})` }}>
+                <li key={prayer.id}>
                   <span>{prayer.name}</span>
                   <span>{owed[prayer.id] ? `-${owed[prayer.id]}` : "0"}</span>
                 </li>
               ))}
-              <li className="total">
-                <span>Total</span>
-                <span>{owed.total ? `-${owed.total}` : "0"}</span>
-              </li>
             </ul>
           </section>
         </aside>
