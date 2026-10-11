@@ -29,6 +29,47 @@ function ConfirmButton({ label, confirmLabel, busy, onConfirm }) {
   );
 }
 
+/** Deleting the account asks for the password first, so an unlocked phone is not enough. */
+function DeleteAccount({ busy, onDelete }) {
+  const [asking, setAsking] = useState(false);
+  const [problem, setProblem] = useState("");
+  if (!asking) {
+    return (
+      <button type="button" className="button danger" onClick={() => setAsking(true)}>
+        Delete account
+      </button>
+    );
+  }
+  return (
+    <form
+      className="form"
+      onSubmit={async (e) => {
+        e.preventDefault();
+        setProblem("");
+        setProblem((await onDelete(new FormData(e.target).get("password"))) || "");
+      }}
+    >
+      <div className="field">
+        <label htmlFor="delete-password">Enter your password to delete your account</label>
+        <input id="delete-password" name="password" type="password" autoComplete="current-password" autoFocus required />
+      </div>
+      {problem && (
+        <p className="alert" role="alert">
+          {problem}
+        </p>
+      )}
+      <div className="row">
+        <button type="submit" className="button danger" disabled={busy}>
+          Yes, delete my account
+        </button>
+        <button type="button" className="button quiet" disabled={busy} onClick={() => setAsking(false)}>
+          Cancel
+        </button>
+      </div>
+    </form>
+  );
+}
+
 export default function Settings() {
   const account = useAccount();
   const router = useRouter();
@@ -111,11 +152,27 @@ export default function Settings() {
       setData((d) => d && { profile: { ...d.profile, start_day: today, start_qaza: zero }, logs: [], qaza: [] });
     }, "All data reset. Every counter is back to 0.");
 
-  const onDelete = () =>
-    run(async () => {
+  /** Checks the password, then deletes. Returns what went wrong, shown beside the password box. */
+  async function onDelete(password) {
+    setBusy(true);
+    setError("");
+    setNotice("");
+    try {
+      // Signing in again is how the password is checked; a wrong one stops here.
+      const { error: problem } = await supabase().auth.signInWithPassword({ email: account.user.email, password });
+      if (problem) {
+        return /invalid/i.test(problem.message)
+          ? "That password is not correct. Your account was not deleted."
+          : `Not deleted: ${problem.message}`;
+      }
       await deleteAccount();
       router.replace("/");
-    });
+    } catch (problem) {
+      return `Not deleted: ${problem.message}`;
+    } finally {
+      setBusy(false);
+    }
+  }
 
   if (account.status !== "in") {
     return (
@@ -214,7 +271,7 @@ export default function Settings() {
       <section className="panel danger-zone">
         <h2>Delete account</h2>
         <p className="muted">Deletes your account and everything in it. This cannot be undone.</p>
-        <ConfirmButton label="Delete account" confirmLabel="Yes, delete my account" busy={busy} onConfirm={onDelete} />
+        <DeleteAccount busy={busy} onDelete={onDelete} />
       </section>
     </main>
     </>
