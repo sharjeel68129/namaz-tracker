@@ -8,7 +8,11 @@ const body = Hanken_Grotesk({ subsets: ["latin"], variable: "--font-body" });
 export const metadata = {
   title: "Namaz Tracker",
   description: "Log your five daily prayers and keep count of the Qaza you owe.",
+  appleWebApp: { capable: true, title: "Namaz", statusBarStyle: "black" },
 };
+
+// Colours the phone's status bar to match the page.
+export const viewport = { themeColor: "#171614" };
 
 export default function RootLayout({ children }) {
   return (
