@@ -7,36 +7,14 @@ import { deleteAccount, loadAccountData, resetData, supabase, updateProfile } fr
 import { useAccount } from "@/lib/use-account";
 import TopBar from "../top-bar";
 
-/** A destructive button that asks once more before doing anything. */
-function ConfirmButton({ label, confirmLabel, busy, onConfirm }) {
-  const [asking, setAsking] = useState(false);
-  if (!asking) {
-    return (
-      <button type="button" className="button danger" onClick={() => setAsking(true)}>
-        {label}
-      </button>
-    );
-  }
-  return (
-    <div className="row">
-      <button type="button" className="button danger" disabled={busy} onClick={onConfirm}>
-        {confirmLabel}
-      </button>
-      <button type="button" className="button quiet" disabled={busy} onClick={() => setAsking(false)}>
-        Cancel
-      </button>
-    </div>
-  );
-}
-
-/** Deleting the account asks for the password first, so an unlocked phone is not enough. */
-function DeleteAccount({ busy, onDelete }) {
+/** A destructive button that asks for the password first, so an unlocked phone is not enough. */
+function PasswordConfirm({ id, label, prompt, confirmLabel, busy, onConfirm }) {
   const [asking, setAsking] = useState(false);
   const [problem, setProblem] = useState("");
   if (!asking) {
     return (
       <button type="button" className="button danger" onClick={() => setAsking(true)}>
-        Delete account
+        {label}
       </button>
     );
   }
@@ -46,12 +24,15 @@ function DeleteAccount({ busy, onDelete }) {
       onSubmit={async (e) => {
         e.preventDefault();
         setProblem("");
-        setProblem((await onDelete(new FormData(e.target).get("password"))) || "");
+        // onConfirm returns what went wrong; nothing back means it is done.
+        const failed = await onConfirm(new FormData(e.target).get("password"));
+        if (failed) setProblem(failed);
+        else setAsking(false);
       }}
     >
       <div className="field">
-        <label htmlFor="delete-password">Enter your password to delete your account</label>
-        <input id="delete-password" name="password" type="password" autoComplete="current-password" autoFocus required />
+        <label htmlFor={id}>{prompt}</label>
+        <input id={id} name="password" type="password" autoComplete="current-password" autoFocus required />
       </div>
       {problem && (
         <p className="alert" role="alert">
@@ -60,7 +41,7 @@ function DeleteAccount({ busy, onDelete }) {
       )}
       <div className="row">
         <button type="submit" className="button danger" disabled={busy}>
-          Yes, delete my account
+          {confirmLabel}
         </button>
         <button type="button" className="button quiet" disabled={busy} onClick={() => setAsking(false)}>
           Cancel
@@ -144,16 +125,11 @@ export default function Settings() {
       router.replace("/");
     });
 
-  const onReset = () =>
-    run(async () => {
-      const zero = Object.fromEntries(PRAYERS.map((p) => [p.id, 0]));
-      const today = dayKey(new Date());
-      await resetData(userId, today, zero);
-      setData((d) => d && { profile: { ...d.profile, start_day: today, start_qaza: zero }, logs: [], qaza: [] });
-    }, "All data reset. Every counter is back to 0.");
-
-  /** Checks the password, then deletes. Returns what went wrong, shown beside the password box. */
-  async function onDelete(password) {
+  /**
+   * Check the password, then run a destructive action. Returns what went wrong, which is
+   * shown beside the password box; returns nothing when the action went through.
+   */
+  async function withPassword(password, failure, action) {
     setBusy(true);
     setError("");
     setNotice("");
@@ -161,18 +137,30 @@ export default function Settings() {
       // Signing in again is how the password is checked; a wrong one stops here.
       const { error: problem } = await supabase().auth.signInWithPassword({ email: account.user.email, password });
       if (problem) {
-        return /invalid/i.test(problem.message)
-          ? "That password is not correct. Your account was not deleted."
-          : `Not deleted: ${problem.message}`;
+        return /invalid/i.test(problem.message) ? `That password is not correct. ${failure}` : `${failure} ${problem.message}`;
       }
-      await deleteAccount();
-      router.replace("/");
+      await action();
     } catch (problem) {
-      return `Not deleted: ${problem.message}`;
+      return `${failure} ${problem.message}`;
     } finally {
       setBusy(false);
     }
   }
+
+  const onReset = (password) =>
+    withPassword(password, "Nothing was reset.", async () => {
+      const zero = Object.fromEntries(PRAYERS.map((p) => [p.id, 0]));
+      const today = dayKey(new Date());
+      await resetData(userId, today, zero);
+      setData((d) => d && { profile: { ...d.profile, start_day: today, start_qaza: zero }, logs: [], qaza: [] });
+      setNotice("All data reset. Every counter is back to 0.");
+    });
+
+  const onDelete = (password) =>
+    withPassword(password, "Your account was not deleted.", async () => {
+      await deleteAccount();
+      router.replace("/");
+    });
 
   if (account.status !== "in") {
     return (
@@ -265,13 +253,27 @@ export default function Settings() {
       <section className="panel danger-zone">
         <h2>Reset all data</h2>
         <p className="muted">Deletes every logged prayer and Qaza entry and sets all counters to 0. Your account stays.</p>
-        <ConfirmButton label="Reset all data" confirmLabel="Yes, reset everything" busy={busy} onConfirm={onReset} />
+        <PasswordConfirm
+          id="reset-password"
+          label="Reset all data"
+          prompt="Enter your password to reset all data"
+          confirmLabel="Yes, reset everything"
+          busy={busy}
+          onConfirm={onReset}
+        />
       </section>
 
       <section className="panel danger-zone">
         <h2>Delete account</h2>
         <p className="muted">Deletes your account and everything in it. This cannot be undone.</p>
-        <DeleteAccount busy={busy} onDelete={onDelete} />
+        <PasswordConfirm
+          id="delete-password"
+          label="Delete account"
+          prompt="Enter your password to delete your account"
+          confirmLabel="Yes, delete my account"
+          busy={busy}
+          onConfirm={onDelete}
+        />
       </section>
     </main>
     </>
