@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import { useAccount } from "@/lib/use-account";
+import Footer from "../footer";
 import TopBar from "../top-bar";
 
 const TITLES = { login: "Log in", signup: "Create your account", forgot: "Reset your password" };
@@ -16,6 +17,7 @@ export default function AuthPage() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
+  const [sentTo, setSentTo] = useState(""); // the address a confirmation link was just sent to
 
   useEffect(() => {
     if (account.status === "in") router.replace("/app");
@@ -63,10 +65,7 @@ export default function AuthPage() {
         if (problem) setError(problem.message);
         // Supabase answers a sign-up for an existing address with a user that has no identities.
         else if (data.user?.identities?.length === 0) setError("That email already has an account. Log in instead.");
-        else if (!data.session) {
-          setMode("login");
-          setNotice(`We sent a confirmation link to ${email}. Open it to finish, then log in.`);
-        }
+        else if (!data.session) setSentTo(email);
       } else {
         const { error: problem } = await supabase().auth.resetPasswordForEmail(email, {
           redirectTo: `${callback}?next=settings`,
@@ -91,6 +90,37 @@ export default function AuthPage() {
           Add your Supabase URL and anon key to .env.local, then restart the dev server. The README has the steps.
         </p>
       </main>
+      </>
+    );
+  }
+
+  if (sentTo) {
+    return (
+      <>
+      <TopBar />
+      <main className="page">
+        <h1>Check your inbox</h1>
+        <p>
+          Thank you for signing up. We sent a confirmation link to <strong>{sentTo}</strong>. Open it to finish
+          creating your account.
+        </p>
+        <p className="muted" style={{ marginTop: "0.75rem" }}>
+          It can take a minute to arrive. If you do not see it, look in your spam folder.
+        </p>
+        <p style={{ marginTop: "1.5rem" }}>
+          <button
+            type="button"
+            className="button quiet"
+            onClick={() => {
+              setSentTo("");
+              switchTo("login");
+            }}
+          >
+            Back to log in
+          </button>
+        </p>
+      </main>
+      <Footer />
       </>
     );
   }
@@ -152,6 +182,7 @@ export default function AuthPage() {
         )}
       </p>
     </main>
+    <Footer />
     </>
   );
 }

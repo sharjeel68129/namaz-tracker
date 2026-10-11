@@ -1,5 +1,6 @@
 import Link from "next/link";
 import Chart from "./app/chart";
+import Footer from "./footer";
 import TopBar from "./top-bar";
 
 // A made-up month to show what the chart looks like once it fills in.
@@ -8,7 +9,7 @@ const sampleCells = SAMPLE.map((level, i) => ({ day: `2026-09-${String(i + 1).pa
 
 export default function Landing() {
   return (
-    <>
+    <div className="landing-screen">
     <TopBar />
     <div className="landing">
       <main>
@@ -48,7 +49,14 @@ export default function Landing() {
           </div>
         </section>
       </main>
+      <Footer />
     </div>
-    </>
+    {/* Phones only: the button stays in reach while the page scrolls. */}
+    <div className="sticky-cta">
+      <Link className="button" href="/auth">
+        Sign up or log in
+      </Link>
+    </div>
+    </div>
   );
 }

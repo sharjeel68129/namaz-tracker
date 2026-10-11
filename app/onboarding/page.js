@@ -45,15 +45,18 @@ export default function Onboarding() {
 
   if (!ready) {
     return (
-      <main className="page">
-        {error ? (
-          <p className="alert" role="alert">
-            {error}
-          </p>
-        ) : (
-          <p className="muted">Loading…</p>
-        )}
-      </main>
+      <>
+        <TopBar />
+        <main className="page">
+          {error ? (
+            <p className="alert" role="alert">
+              {error}
+            </p>
+          ) : (
+            <p className="muted">Loading…</p>
+          )}
+        </main>
+      </>
     );
   }
 

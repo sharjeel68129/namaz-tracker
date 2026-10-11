@@ -42,6 +42,12 @@ Then fill in the two placeholders in `supabase/reminders.sql` and run it in the 
 
 Until you verify a domain in Resend, it only delivers to your own Resend account email, with `REMINDER_FROM` set to `onboarding@resend.dev`.
 
+## Before going public
+
+- `lib/site.js` holds the contact address and the name shown on the Privacy and Terms pages. Change them there.
+- Page-view counts use Vercel Analytics: switch it on once in the Vercel project under Analytics. It collects nothing until then.
+- `robots.txt`, `sitemap.xml` and the link-preview image are generated from the site's public address, which Vercel supplies.
+
 ## How the rules work
 
 - A day runs 12AM to 12AM on your device. Each day's prayers can be logged for 48 hours from its 12AM, so today's and yesterday's are open.

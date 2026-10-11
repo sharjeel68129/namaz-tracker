@@ -80,22 +80,29 @@ export default function Tracker() {
 
   const logMap = useMemo(() => indexLogs(data?.logs || []), [data?.logs]);
 
+  // The top bar is already there while loading, so the page does not jump when the data arrives.
   if (error && !data) {
     return (
-      <main className="page">
-        <p className="alert" role="alert">
-          {error}
-        </p>
-      </main>
+      <>
+        <TopBar email={account.user?.email} />
+        <main className="page">
+          <p className="alert" role="alert">
+            {error}
+          </p>
+        </main>
+      </>
     );
   }
   if (!data) {
     return (
-      <main className="page">
-        <p className="muted" aria-live="polite">
-          Loading your prayers…
-        </p>
-      </main>
+      <>
+        <TopBar email={account.user?.email} />
+        <main className="page">
+          <p className="muted" aria-live="polite">
+            Loading your prayers…
+          </p>
+        </main>
+      </>
     );
   }
 

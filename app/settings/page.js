@@ -5,6 +5,8 @@ import { PRAYERS, dayKey } from "@/lib/days";
 import { START_EDIT_LOGS, minStart, startEditable } from "@/lib/stats";
 import { deleteAccount, loadAccountData, resetData, supabase, updateProfile } from "@/lib/supabase";
 import { useAccount } from "@/lib/use-account";
+import Link from "next/link";
+import { CONTACT_EMAIL } from "@/lib/site";
 import TopBar from "../top-bar";
 
 /** A destructive button that asks for the password first, so an unlocked phone is not enough. */
@@ -164,9 +166,12 @@ export default function Settings() {
 
   if (account.status !== "in") {
     return (
-      <main className="page">
-        <p className="muted">Loading…</p>
-      </main>
+      <>
+        <TopBar />
+        <main className="page">
+          <p className="muted">Loading…</p>
+        </main>
+      </>
     );
   }
 
@@ -275,6 +280,12 @@ export default function Settings() {
           onConfirm={onDelete}
         />
       </section>
+
+      <p className="row muted" style={{ marginTop: "1.5rem" }}>
+        <Link href="/privacy">Privacy</Link>
+        <Link href="/terms">Terms</Link>
+        <a href={`mailto:${CONTACT_EMAIL}`}>Contact: {CONTACT_EMAIL}</a>
+      </p>
     </main>
     </>
   );
