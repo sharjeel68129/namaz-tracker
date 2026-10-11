@@ -16,13 +16,13 @@
   --danger-text: #ff8f88;
   --ok-text: #6fd69b;
 
-  /* Prayers prayed that day: gold for all five, then blue, green, orange, red, maroon for none. */
+  /* Prayers prayed that day: gold for all five, then blue, green, orange, pink, red for none. */
   --c5: #e3b653;
   --c4: #4f8fe0;
   --c3: #34b36b;
   --c2: #f08a2b;
-  --c1: #e0453c;
-  --c0: #7a1e26;
+  --c1: #f283b6;
+  --c0: #d92b21;
   --cnone: #2e2c28;
 
   --radius: 14px;

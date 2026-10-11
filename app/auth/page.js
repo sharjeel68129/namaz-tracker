@@ -39,7 +39,8 @@ export default function AuthPage() {
     const form = new FormData(e.target);
     const email = form.get("email");
     const password = form.get("password");
-    const callback = `${window.location.origin}/auth/callback`;
+    // Empty when running locally, where the page's own address is the right one.
+    const callback = `${process.env.NEXT_PUBLIC_SITE_URL || window.location.origin}/auth/callback`;
     setBusy(true);
     setError("");
     setNotice("");
