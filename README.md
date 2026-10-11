@@ -6,7 +6,6 @@ Log the five daily prayers as prayed or missed, keep a Qaza count for each, and 
 
 ```
 npm install
-copy .env.example .env.local
 npm run dev
 ```
 
@@ -16,7 +15,13 @@ Then open http://localhost:3000. `npm run check` runs the date and statistics ch
 
 1. Create a free project at https://supabase.com.
 2. SQL Editor: paste and run `supabase/schema.sql`.
-3. Project Settings -> API: copy the project URL and the anon public key into `.env.local`.
+3. Project Settings -> API: create a file named `.env.local` in this folder with the project URL and the anon public key:
+
+   ```
+   NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
+   NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-public-key
+   ```
+
 4. Authentication -> URL Configuration: set Site URL to `http://localhost:3000` and add `http://localhost:3000/auth/callback` to Redirect URLs.
 5. Authentication -> Sign In / Providers -> Email: keep "Confirm email" switched on.
 
