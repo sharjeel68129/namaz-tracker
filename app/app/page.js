@@ -110,6 +110,7 @@ export default function Tracker() {
   const owed = owedCounts(profile.start_qaza, logs, qaza);
   const cards = visibleCards(now, profile.start_day, logMap);
   const last30 = addDays(today, -29);
+  const pastLeft = cards.past.filter((card) => !card.log).length;
 
   async function onLog(day, prayer, status) {
     setBusy(`${day}|${prayer}`);
@@ -142,11 +143,10 @@ export default function Tracker() {
     setData((d) => ({ ...d, qaza: [...d.qaza, row] }));
   }
 
-  const renderCard = (past) => ({ day, prayer, log }) => (
+  const renderCard = ({ day, prayer, log }) => (
     <PrayerCard
       key={`${day}|${prayer.id}`}
       prayer={prayer}
-      past={past}
       log={log}
       owed={owed[prayer.id]}
       busy={busy === `${day}|${prayer.id}`}
@@ -193,25 +193,31 @@ export default function Tracker() {
               {error}
             </p>
           )}
-          <ul className="prayers">{cards.today.map(renderCard(false))}</ul>
+          <ul className="prayers">{cards.today.map(renderCard)}</ul>
 
+          {/* Folded away so the page fits one screen; the heading says how many are left. */}
           {cards.past.length > 0 && (
-            <>
-              <h2>Still to log from yesterday</h2>
-              <ul className="prayers">{cards.past.map(renderCard(true))}</ul>
-            </>
+            <details className="past">
+              <summary>
+                Yesterday
+                <span className="past-count">{pastLeft ? `${pastLeft} still to log` : "All logged"}</span>
+              </summary>
+              <ul className="prayers">{cards.past.map(renderCard)}</ul>
+            </details>
           )}
 
-          <h2>Last 30 days</h2>
+          <div className="chart-head">
+            <h2>Last 30 days</h2>
+            <button
+              type="button"
+              className="button quiet"
+              aria-expanded={showStats}
+              onClick={() => setShowStats(!showStats)}
+            >
+              {showStats ? "Hide statistics" : "Show statistics"}
+            </button>
+          </div>
           <Chart legend cells={chartCells(daysBetween(last30, today), profile.start_day, today, logMap)} />
-          <button
-            type="button"
-            className="button quiet stats-toggle"
-            aria-expanded={showStats}
-            onClick={() => setShowStats(!showStats)}
-          >
-            {showStats ? "Hide statistics" : "Show statistics"}
-          </button>
           {showStats && <StatsPanel stats={rangeStats(last30, today, logs, qaza)} />}
         </main>
 

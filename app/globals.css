@@ -16,13 +16,13 @@
   --danger-text: #ff8f88;
   --ok-text: #6fd69b;
 
-  /* Prayers prayed that day: gold for all five, then blue, green, orange, pink, red for none. */
-  --c5: #e3b653;
-  --c4: #4f8fe0;
-  --c3: #34b36b;
-  --c2: #f08a2b;
-  --c1: #f283b6;
-  --c0: #d92b21;
+  /* Prayers prayed that day: strong blue for all five, then light teal, green, gold, orange, red for none. */
+  --c5: #2f62e6;
+  --c4: #3fbab2;
+  --c3: #4fa863;
+  --c2: #e3b653;
+  --c1: #e07a32;
+  --c0: #c0392b;
   --cnone: #2e2c28;
 
   --radius: 14px;
@@ -578,7 +578,7 @@ button:disabled {
 /* Narrower than its 60% column, so the prayer name and its buttons sit close together. */
 .centre {
   flex: 0 1 50rem;
-  padding: 1.5rem 0 4rem;
+  padding: 1.25rem 0 1.25rem;
   min-width: 0;
 }
 
@@ -685,6 +685,66 @@ button:disabled {
   min-height: 44px;
 }
 
+/* Yesterday's prayers, folded into one rectangle under Today's until opened. */
+.past {
+  margin-top: 0.75rem;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+}
+
+.past summary {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  min-height: 44px;
+  padding: 0.5rem 1rem;
+  cursor: pointer;
+  list-style: none;
+  font-family: var(--font-display), system-ui, sans-serif;
+  font-size: 1.25rem;
+  font-weight: 700;
+  line-height: 1.15;
+}
+
+.past summary::-webkit-details-marker {
+  display: none;
+}
+
+.past summary::after {
+  content: "";
+  width: 0.55rem;
+  height: 0.55rem;
+  margin: 0 0.25rem 0.2rem;
+  border-right: 2px solid var(--muted);
+  border-bottom: 2px solid var(--muted);
+  transform: rotate(45deg);
+  transition: transform 150ms ease-out;
+}
+
+.past[open] summary::after {
+  margin-bottom: -0.2rem;
+  transform: rotate(-135deg);
+}
+
+.past[open] summary {
+  border-bottom: 1px solid var(--line);
+}
+
+.past-count {
+  margin-left: auto;
+  font-family: var(--font-body), system-ui, sans-serif;
+  font-size: 0.9375rem;
+  font-weight: 500;
+  color: var(--muted);
+}
+
+.past .prayers {
+  background: none;
+  border: 0;
+  border-radius: 0;
+}
+
 .all-done {
   padding: 1rem 1.25rem;
   border: 1px dashed var(--line);
@@ -748,8 +808,16 @@ button:disabled {
   width: 0.8rem;
 }
 
-.stats-toggle {
-  margin-top: 1rem;
+.chart-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin: 1.25rem 0 0.6rem;
+}
+
+.chart-head h2 {
+  font-size: 1.5rem;
 }
 
 /* ---------- Statistics ---------- */
