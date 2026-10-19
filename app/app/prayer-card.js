@@ -1,10 +1,10 @@
 /** One prayer rectangle: name on the left, Qaza counter, then Prayed / Missed (or Logged) on the right. */
-export default function PrayerCard({ prayer, log, owed, busy, onLog, onUndo }) {
+export default function PrayerCard({ prayer, log, owed, onLog, onUndo }) {
   return (
     <li className="prayer">
       <div className="prayer-name">{prayer.name}</div>
       {log && (
-        <button type="button" className="link undo" disabled={busy} onClick={onUndo}>
+        <button type="button" className="link undo" onClick={onUndo}>
           Undo
         </button>
       )}
@@ -17,10 +17,10 @@ export default function PrayerCard({ prayer, log, owed, busy, onLog, onUndo }) {
           <span className="pill logged">Logged</span>
         ) : (
           <>
-            <button type="button" className="pill prayed" disabled={busy} onClick={() => onLog("prayed")}>
+            <button type="button" className="pill prayed" onClick={() => onLog("prayed")}>
               Prayed
             </button>
-            <button type="button" className="pill missed" disabled={busy} onClick={() => onLog("missed")}>
+            <button type="button" className="pill missed" onClick={() => onLog("missed")}>
               Missed
             </button>
           </>

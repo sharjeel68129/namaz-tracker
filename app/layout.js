@@ -2,6 +2,7 @@ import { Bricolage_Grotesque, Hanken_Grotesk } from "next/font/google";
 import { Analytics } from "@vercel/analytics/next";
 import { DESCRIPTION, SITE_NAME, SITE_URL } from "@/lib/site";
 import CookieNotice from "./cookie-notice";
+import OfflineSupport from "./offline-support";
 import "./globals.css";
 
 // Self-hosted by Next at build time, so no font request leaves the browser.
@@ -28,6 +29,7 @@ export default function RootLayout({ children }) {
         {children}
         <CookieNotice />
         <Analytics />
+        <OfflineSupport />
       </body>
     </html>
   );

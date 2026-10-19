@@ -13,7 +13,7 @@ export default function Privacy() {
       <TopBar />
       <main className="page wide legal">
         <h1>Privacy</h1>
-        <p className="muted">Last updated 11 October 2026</p>
+        <p className="muted">Last updated 19 October 2026</p>
         <p>
           {SITE_NAME} is run by {OPERATOR}. This page says what the site stores about you and what you can do about
           it.
@@ -29,8 +29,12 @@ export default function Privacy() {
 
         <h2>Where it is kept</h2>
         <p>
-          Accounts and data are kept by Supabase, and the website is served by Vercel. Both are companies that store
-          and deliver data on our behalf. Only your own account can read your prayer records.
+          Accounts and data are kept by Supabase, the website is served by Vercel, and emails are sent by Brevo.
+          These companies store and deliver data on our behalf. Only your own account can read your prayer records.
+        </p>
+        <p>
+          So the app works without a connection, a copy of your records is also kept in your browser on each device
+          you use. It is removed when you log out, reset your data or delete your account.
         </p>
 
         <h2>Emails</h2>
@@ -42,13 +46,13 @@ export default function Privacy() {
 
         <h2>Cookies and visit counts</h2>
         <p>
-          The site keeps a small amount of data in your browser so you stay logged in, and to remember that you have
-          seen the cookie notice. It uses no advertising or tracking cookies. Page visits are counted with Vercel
+          The site keeps data in your browser so you stay logged in, to keep the offline copy described above, and
+          to remember that you have seen the cookie notice. It uses no advertising or tracking cookies. Page visits are counted with Vercel
           Analytics, which uses no cookies and does not identify you.
         </p>
 
         <h2>Sharing</h2>
-        <p>Your data is not sold, and it is not shared with anyone beyond the two companies named above.</p>
+        <p>Your data is not sold, and it is not shared with anyone beyond the three companies named above.</p>
 
         <h2>Deleting your data</h2>
         <p>

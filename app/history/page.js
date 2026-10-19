@@ -2,7 +2,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { dayKey, indexLogs } from "@/lib/days";
-import { loadAccountData } from "@/lib/supabase";
+import { loadForDevice } from "@/lib/offline";
 import { useAccount } from "@/lib/use-account";
 import History from "../app/history";
 import TopBar from "../top-bar";
@@ -14,6 +14,7 @@ export default function HistoryPage() {
   const userId = account.user?.id;
   const [data, setData] = useState(null);
   const [error, setError] = useState("");
+  const [offline, setOffline] = useState(false);
 
   useEffect(() => {
     if (account.status === "out" || account.status === "unconfigured") router.replace("/auth");
@@ -21,8 +22,12 @@ export default function HistoryPage() {
 
   useEffect(() => {
     if (!userId) return;
-    loadAccountData()
-      .then((loaded) => (loaded.profile ? setData(loaded) : router.replace("/onboarding")))
+    loadForDevice(userId)
+      .then((loaded) => {
+        if (!loaded.data.profile) return router.replace("/onboarding");
+        setData(loaded.data);
+        setOffline(loaded.offline);
+      })
       .catch((problem) => setError(`Your history could not be loaded: ${problem.message}`));
   }, [userId, router]);
 
@@ -33,6 +38,11 @@ export default function HistoryPage() {
     <TopBar email={account.user?.email} />
     <main className="page history">
       <h1>History</h1>
+      {offline && (
+        <p className="offline" role="status">
+          You are offline, so this is the copy saved on this device.
+        </p>
+      )}
       {error && (
         <p className="alert" role="alert">
           {error}

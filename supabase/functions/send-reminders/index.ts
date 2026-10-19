@@ -2,7 +2,8 @@
 // each run emails the users for whom it is currently 6PM-something in their own time zone and
 // who still have prayers from yesterday not logged. Those prayers count as missed at 12AM.
 //
-// Secrets (supabase secrets set ...): RESEND_API_KEY, REMINDER_FROM, SITE_URL, REMINDER_SECRET.
+// Secrets (supabase secrets set ...): BREVO_API_KEY, REMINDER_FROM (the sender address verified
+// in Brevo), SITE_URL, REMINDER_SECRET.
 // SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY are provided by Supabase.
 import { createClient } from "npm:@supabase/supabase-js@2";
 
@@ -50,17 +51,17 @@ async function sendEmail(to: string, unlogged: string[], siteUrl: string) {
     "",
     "To stop these emails, turn off the reminder in Settings.",
   ].join("\n");
-  const response = await fetch("https://api.resend.com/emails", {
+  const response = await fetch("https://api.brevo.com/v3/smtp/email", {
     method: "POST",
-    headers: { Authorization: `Bearer ${Deno.env.get("RESEND_API_KEY")}`, "Content-Type": "application/json" },
+    headers: { "api-key": Deno.env.get("BREVO_API_KEY")!, "Content-Type": "application/json" },
     body: JSON.stringify({
-      from: Deno.env.get("REMINDER_FROM"),
-      to,
+      sender: { name: "Namaz Tracker", email: Deno.env.get("REMINDER_FROM") },
+      to: [{ email: to }],
       subject: `Namaz Tracker: ${count} from yesterday still to log`,
-      text,
+      textContent: text,
     }),
   });
-  if (!response.ok) throw new Error(`Resend answered ${response.status}`);
+  if (!response.ok) throw new Error(`Brevo answered ${response.status}: ${await response.text()}`);
 }
 
 Deno.serve(async (request) => {

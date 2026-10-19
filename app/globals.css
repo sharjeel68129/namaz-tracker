@@ -582,13 +582,38 @@ button:disabled {
   min-width: 0;
 }
 
-.centre > h2 {
-  font-size: 1.5rem;
-  margin: 2.25rem 0 0.85rem;
+/* "Today", the Hijri date beside it, and the streak at the far end. */
+.today-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.25rem 0.75rem;
+  margin-bottom: 0.85rem;
 }
 
-.centre > h2:first-child {
-  margin-top: 0;
+.today-head h2 {
+  font-size: 1.5rem;
+}
+
+.hijri {
+  color: var(--muted);
+  font-size: 0.9375rem;
+}
+
+.streak {
+  margin-left: auto;
+  color: var(--gold);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.offline {
+  margin-bottom: 0.75rem;
+  padding: 0.5rem 0.85rem;
+  border: 1px dashed var(--line);
+  border-radius: var(--radius-small);
+  color: var(--muted);
+  font-size: 0.9375rem;
 }
 
 /* One rectangle holding all the prayers: each is a row, divided from the next by a line. */

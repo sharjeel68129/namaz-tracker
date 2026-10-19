@@ -1,7 +1,9 @@
 // Edge-case checks for the date and statistics rules: npm run check
 import assert from "node:assert/strict";
 import { PRAYERS, addDays, daysBetween, expiredUnlogged, indexLogs, visibleCards } from "../lib/days.js";
-import { chartCells, maskEmail, minStart, owedCounts, rangeStats, startEditable } from "../lib/stats.js";
+import { chartCells, maskEmail, minStart, owedCounts, perfectStreak, rangeStats, startEditable } from "../lib/stats.js";
+import { hijriDate } from "../lib/hijri.js";
+import { applyChange } from "../lib/offline.js";
 
 const at = (y, m, d, h = 0, min = 0) => new Date(y, m - 1, d, h, min);
 const log = (day, prayer, status, loggedAt, auto = false) => ({ day, prayer, status, auto, logged_at: loggedAt.toISOString() });
@@ -92,5 +94,29 @@ assert.equal(startEditable([hand, hand], []), false);
 assert.equal(minStart([auto], [entry]).asr, 4);
 assert.equal(minStart([log(START, "asr", "missed", at(2026, 10, 1))], [entry]).asr, 3);
 assert.equal(minStart([auto], [entry]).zuhr, 0);
+
+// Streak: perfect days in a row. Today and yesterday only break it once something is missed.
+const fullDay = (day) => PRAYERS.map(({ id }) => log(day, id, "prayed", at(2026, 10, 9)));
+const streakLogs = [...fullDay("2026-10-07"), ...fullDay("2026-10-08"), ...fullDay("2026-10-09")];
+assert.equal(perfectStreak("2026-10-10", START, indexLogs(streakLogs)), 3); // today still open
+assert.equal(perfectStreak("2026-10-11", START, indexLogs(streakLogs)), 3); // yesterday still open
+assert.equal(perfectStreak("2026-10-12", START, indexLogs(streakLogs)), 0); // Oct 10 is closed and empty
+assert.equal(perfectStreak("2026-10-10", START, indexLogs([...streakLogs, ...fullDay("2026-10-10")])), 4);
+const slip = log("2026-10-10", "fajr", "missed", at(2026, 10, 10, 9));
+assert.equal(perfectStreak("2026-10-10", START, indexLogs([...streakLogs, slip])), 0);
+assert.equal(perfectStreak("2026-10-01", START, indexLogs([])), 0);
+
+// Hijri date follows Hong Kong: Ramadan 1447 began 19 Feb 2026, Shawwal 21 March.
+assert.match(hijriDate(at(2026, 2, 19, 12)), /^1 Ramadan 1447/);
+assert.match(hijriDate(at(2026, 3, 21, 12)), /^1 Shawwal 1447/);
+
+// Offline changes: a log replaces any row for that prayer, undo removes it, Qaza is added.
+const before = { profile: {}, logs: [log(START, "fajr", "missed", at(2026, 10, 1))], qaza: [] };
+let after = applyChange(before, { type: "log", day: START, prayer: "fajr", status: "prayed", at: "x", id: "1" });
+assert.deepEqual(after.logs.map((l) => l.status), ["prayed"]);
+after = applyChange(after, { type: "undo", day: START, prayer: "fajr" });
+assert.equal(after.logs.length, 0);
+after = applyChange(after, { type: "qaza", prayer: "isha", date: START, count: 2, at: "x", id: "2" });
+assert.equal(owedCounts({ isha: 5 }, after.logs, after.qaza).isha, 3);
 
 console.log("All checks passed.");

@@ -28,7 +28,7 @@ export default function CookieNotice() {
   return (
     <aside className="cookie-notice" aria-label="Cookies">
       <p>
-        This site only stores what it needs to keep you logged in. No tracking or advertising cookies.{" "}
+        This site only stores what it needs to keep you logged in and work offline. No tracking or advertising cookies.{" "}
         <Link href="/privacy">Privacy</Link>
       </p>
       <button type="button" className="button" onClick={onOk}>

@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { PRAYERS, dayKey } from "@/lib/days";
 import { START_EDIT_LOGS, minStart, startEditable } from "@/lib/stats";
+import { forgetDevice, pendingChanges, sendPending } from "@/lib/offline";
 import { deleteAccount, loadAccountData, resetData, supabase, updateProfile } from "@/lib/supabase";
 import { useAccount } from "@/lib/use-account";
 import Link from "next/link";
@@ -123,44 +124,62 @@ export default function Settings() {
 
   const onLogOut = () =>
     run(async () => {
+      // Changes made offline would be lost with this device's copy, so they go out first.
+      await sendPending(userId);
+      if (pendingChanges(userId).length) {
+        throw new Error("Some changes made offline have not been sent yet. Connect to the internet, then log out.");
+      }
       await supabase().auth.signOut();
+      forgetDevice(userId);
       router.replace("/");
     });
 
+  /** Saves every record as a spreadsheet file: starting Qaza, each prayer logged, each Qaza entry. */
+  function onDownload() {
+    const { profile, logs, qaza } = data;
+    const rows = [["record", "date", "prayer", "status", "count", "logged_at"]];
+    for (const { id } of PRAYERS) rows.push(["starting qaza", profile.start_day, id, "", profile.start_qaza?.[id] ?? 0, ""]);
+    for (const log of logs) rows.push(["prayer", log.day, log.prayer, log.status + (log.auto ? " (counted at 48 hours)" : ""), "", log.logged_at]);
+    for (const entry of qaza) rows.push(["qaza prayed", entry.date_prayed, entry.prayer, "", entry.count, entry.created_at]);
+    const csv = rows.map((row) => row.map((cell) => `"${String(cell).replace(/"/g, '""')}"`).join(",")).join("\r\n");
+    const link = document.createElement("a");
+    link.href = URL.createObjectURL(new Blob([csv], { type: "text/csv" }));
+    link.download = `namaz-tracker-${dayKey(new Date())}.csv`;
+    link.click();
+    setTimeout(() => URL.revokeObjectURL(link.href), 1000);
+  }
+
   /**
-   * Check the password, then run a destructive action. Returns what went wrong, which is
-   * shown beside the password box; returns nothing when the action went through.
+   * Run a destructive action that needs the password (the database checks it). Returns what
+   * went wrong, which is shown beside the password box; returns nothing when it went through.
    */
-  async function withPassword(password, failure, action) {
+  async function withPassword(failure, action) {
     setBusy(true);
     setError("");
     setNotice("");
     try {
-      // Signing in again is how the password is checked; a wrong one stops here.
-      const { error: problem } = await supabase().auth.signInWithPassword({ email: account.user.email, password });
-      if (problem) {
-        return /invalid/i.test(problem.message) ? `That password is not correct. ${failure}` : `${failure} ${problem.message}`;
-      }
       await action();
     } catch (problem) {
-      return `${failure} ${problem.message}`;
+      return `${problem.message} ${failure}`;
     } finally {
       setBusy(false);
     }
   }
 
   const onReset = (password) =>
-    withPassword(password, "Nothing was reset.", async () => {
+    withPassword("Nothing was reset.", async () => {
       const zero = Object.fromEntries(PRAYERS.map((p) => [p.id, 0]));
       const today = dayKey(new Date());
-      await resetData(userId, today, zero);
+      await resetData(password, today);
+      forgetDevice(userId);
       setData((d) => d && { profile: { ...d.profile, start_day: today, start_qaza: zero }, logs: [], qaza: [] });
       setNotice("All data reset. Every counter is back to 0.");
     });
 
   const onDelete = (password) =>
-    withPassword(password, "Your account was not deleted.", async () => {
-      await deleteAccount();
+    withPassword("Your account was not deleted.", async () => {
+      await deleteAccount(password);
+      forgetDevice(userId);
       router.replace("/");
     });
 
@@ -245,6 +264,21 @@ export default function Settings() {
           </button>
         </div>
       </form>
+
+      {data && (
+        <section className="panel">
+          <h2>Download my data</h2>
+          <p className="muted">
+            Every prayer you have logged, every Qaza entry and your starting numbers, as a spreadsheet file
+            (CSV) that opens in Excel or Google Sheets.
+          </p>
+          <div>
+            <button type="button" className="button quiet" onClick={onDownload}>
+              Download my data
+            </button>
+          </div>
+        </section>
+      )}
 
       <section className="panel">
         <h2>Log out</h2>

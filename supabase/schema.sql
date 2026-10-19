@@ -53,24 +53,91 @@ drop policy if exists "own profile" on public.profiles;
 create policy "own profile" on public.profiles
   for all to authenticated using (user_id = auth.uid()) with check (user_id = auth.uid());
 
+-- Logs can be read and added, but not changed. A prayer can only be deleted (Undo) while its
+-- rectangle can still be on screen; 3 days covers every time zone. Wiping everything goes
+-- through reset_own_data below, which asks for the password.
 drop policy if exists "own prayer logs" on public.prayer_logs;
-create policy "own prayer logs" on public.prayer_logs
-  for all to authenticated using (user_id = auth.uid()) with check (user_id = auth.uid());
+drop policy if exists "own prayer logs read" on public.prayer_logs;
+drop policy if exists "own prayer logs add" on public.prayer_logs;
+drop policy if exists "own prayer logs undo" on public.prayer_logs;
+create policy "own prayer logs read" on public.prayer_logs
+  for select to authenticated using (user_id = auth.uid());
+create policy "own prayer logs add" on public.prayer_logs
+  for insert to authenticated with check (user_id = auth.uid());
+create policy "own prayer logs undo" on public.prayer_logs
+  for delete to authenticated using (user_id = auth.uid() and day >= current_date - 3);
 
 drop policy if exists "own qaza logs" on public.qaza_logs;
-create policy "own qaza logs" on public.qaza_logs
-  for all to authenticated using (user_id = auth.uid()) with check (user_id = auth.uid());
+drop policy if exists "own qaza logs read" on public.qaza_logs;
+drop policy if exists "own qaza logs add" on public.qaza_logs;
+create policy "own qaza logs read" on public.qaza_logs
+  for select to authenticated using (user_id = auth.uid());
+create policy "own qaza logs add" on public.qaza_logs
+  for insert to authenticated with check (user_id = auth.uid());
 
--- Lets a signed-in user delete their own account from the settings page without the app
--- ever holding the service_role key. The tables above cascade.
-create or replace function public.delete_own_account()
-returns void
+-- The browser may change only these profile fields; the first tracked day is moved only by
+-- reset_own_data, and last_reminded only by the reminder function.
+revoke update on public.profiles from authenticated;
+grant update (timezone, reminders, start_qaza) on public.profiles to authenticated;
+
+-- Reset and account deletion both need the account password, checked here in the database,
+-- so a logged-in session on its own (an unlocked phone, a copied token) cannot do either.
+create extension if not exists pgcrypto with schema extensions;
+
+-- Not callable from the browser, so it cannot be used to guess passwords on its own.
+create or replace function public.password_ok(password text)
+returns boolean
 language sql
 security definer
 set search_path = ''
 as $$
-  delete from auth.users where id = auth.uid();
+  select exists (
+    select 1 from auth.users
+    where id = auth.uid() and encrypted_password = extensions.crypt(password, encrypted_password)
+  );
 $$;
+revoke all on function public.password_ok(text) from public, anon, authenticated;
 
-revoke all on function public.delete_own_account() from public, anon;
-grant execute on function public.delete_own_account() to authenticated;
+-- The old version without a password.
+drop function if exists public.delete_own_account();
+
+-- Deletes the signed-in user's account; the tables above cascade.
+create or replace function public.delete_own_account(password text)
+returns void
+language plpgsql
+security definer
+set search_path = ''
+as $$
+begin
+  if not public.password_ok(password) then
+    perform pg_sleep(1); -- slows down guessing
+    raise exception 'wrong password';
+  end if;
+  delete from auth.users where id = auth.uid();
+end;
+$$;
+revoke all on function public.delete_own_account(text) from public, anon;
+grant execute on function public.delete_own_account(text) to authenticated;
+
+-- Wipes every log and sets every counter to 0; tracking restarts from `today`.
+create or replace function public.reset_own_data(password text, today date)
+returns void
+language plpgsql
+security definer
+set search_path = ''
+as $$
+begin
+  if not public.password_ok(password) then
+    perform pg_sleep(1);
+    raise exception 'wrong password';
+  end if;
+  delete from public.prayer_logs where user_id = auth.uid();
+  delete from public.qaza_logs where user_id = auth.uid();
+  update public.profiles
+  set start_day = today,
+      start_qaza = '{"fajr": 0, "zuhr": 0, "asr": 0, "maghrib": 0, "isha": 0}'
+  where user_id = auth.uid();
+end;
+$$;
+revoke all on function public.reset_own_data(text, date) from public, anon;
+grant execute on function public.reset_own_data(text, date) to authenticated;
